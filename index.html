@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Planning ménage — Gîte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f5f2;--surface:#fff;--surface2:#f0ede8;--border:#e4dfd8;--border2:#d0c9c0;
+  --text:#1c1917;--text2:#78716c;--text3:#a8a29e;
+  --green:#15803d;--green-bg:#f0fdf4;--green-border:#86efac;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#93c5fd;
+  --red:#991b1b;--red-bg:#fef2f2;--red-border:#fca5a5;
+  --amber:#92400e;--amber-bg:#fffbeb;--amber-border:#fcd34d;
+  --purple:#6d28d9;--purple-bg:#f5f3ff;--purple-border:#c4b5fd;
+  --accent:#c2410c;--radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5}
+.wrap{max-width:680px;margin:0 auto;padding:1.25rem 1rem 5rem}
+
+/* LOGIN */
+.login-screen{max-width:340px;margin:4rem auto;text-align:center}
+.login-logo{width:48px;height:48px;background:var(--text);border-radius:12px;margin:0 auto 1.25rem;display:flex;align-items:center;justify-content:center}
+.login-logo svg,.topbar-icon svg{color:#fff}
+.login-title{font-size:1.25rem;font-weight:600;margin-bottom:.3rem;letter-spacing:-.02em}
+.login-sub{font-size:.875rem;color:var(--text2);margin-bottom:2rem}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.profile-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.5rem 1rem;cursor:pointer;transition:all .15s;text-align:center}
+.profile-card:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.p-avatar{width:48px;height:48px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;font-family:'DM Mono',monospace}
+.av-o{background:#fef3c7;color:#92400e}.av-c{background:#dcfce7;color:#15803d}
+.p-name{font-size:.9375rem;font-weight:600}.p-role{font-size:.75rem;color:var(--text3);margin-top:3px}
+
+/* PASSWORD */
+.pwd-screen{max-width:300px;margin:4rem auto}
+.pwd-back{font-size:.8125rem;color:var(--text2);margin-bottom:1.5rem;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.pwd-back:hover{color:var(--text)}
+.pwd-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.5rem}
+.pwd-title{font-size:1rem;font-weight:600;margin-bottom:.25rem;letter-spacing:-.02em}
+.pwd-sub{font-size:.8125rem;color:var(--text2);margin-bottom:1.25rem}
+.pwd-input{width:100%;padding:10px 12px;font-size:.9375rem;font-family:'DM Mono',monospace;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);text-align:center;letter-spacing:.2em;margin-bottom:10px;transition:border-color .15s}
+.pwd-input:focus{outline:none;border-color:var(--border2)}
+.pwd-btn{width:100%;padding:9px;font-size:.875rem;font-weight:600;font-family:'DM Sans',sans-serif;border:1.5px solid var(--green-border);border-radius:var(--radius-sm);background:var(--green-bg);color:var(--green);cursor:pointer}
+.pwd-btn:hover{background:#bbf7d0}
+.pwd-err{font-size:.8125rem;color:var(--red);margin-top:8px;display:none;text-align:center}
+.pwd-err.show{display:block}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.topbar-icon{width:32px;height:32px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.topbar-title{font-size:.9375rem;font-weight:600;flex:1;letter-spacing:-.01em}
+.switch-btn{font-size:.75rem;padding:5px 11px;border:1px solid var(--border);border-radius:20px;background:transparent;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif}
+.switch-btn:hover{background:var(--surface2);color:var(--text)}
+
+/* ICAL BAR */
+.ical-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px}
+.ical-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ical-dot-ok{background:#22c55e}
+.ical-dot-wait{background:#f59e0b;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ical-lbl{font-size:.75rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'DM Mono',monospace}
+.ical-status{font-size:.75rem;font-weight:600;white-space:nowrap}
+.ical-ok{color:var(--green)}.ical-loading{color:var(--amber)}.ical-demo{color:var(--text3)}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+@media(min-width:480px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1rem}
+.stat-label{font-size:.6875rem;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.stat-value{font-size:1.5rem;font-weight:600;letter-spacing:-.03em}
+.stat-value.alert{color:var(--accent)}
+
+/* ALERT BANNER */
+.alert-banner{background:var(--red-bg);border:1.5px solid var(--red-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+.alert-banner-text{flex:1;font-size:.8125rem;color:var(--red);font-weight:500}
+
+/* SECTION */
+.sec-div{font-size:.6875rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:8px}
+.sec-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.sec-count{background:var(--surface2);color:var(--text2);padding:1px 7px;border-radius:10px;font-size:.625rem;font-weight:600}
+.empty{color:var(--text3);font-size:.875rem;padding:.5rem 0;font-style:italic}
+
+/* CARD */
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.125rem;margin-bottom:10px}
+.card.has-alert{border-color:var(--red-border)}
+.card.is-adhoc{border-left:3px solid var(--purple)}
+.card-top{display:flex;align-items:flex-start;gap:10px}
+.card-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:8px}
+.d-none{background:#d4c9bf}.d-me{background:#22c55e}.d-cp{background:#3b82f6}.d-ok{background:#22c55e}.d-ko{background:#ef4444}
+.card-info{flex:1;min-width:0}
+.card-title{font-size:.9375rem;font-weight:600;letter-spacing:-.01em;line-height:1.35}
+.card-sub{font-size:.8125rem;color:var(--text2);margin-top:3px}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;max-width:140px}
+
+/* BADGES */
+.badge{font-size:.6875rem;padding:3px 9px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-block}
+.b-none{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.b-me{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.b-cp{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.b-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.b-ko{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.b-adhoc{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+
+/* BUTTONS */
+.card-actions{display:flex;gap:7px;margin-top:.875rem;flex-wrap:wrap}
+.btn{padding:7px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.8125rem;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif;transition:all .12s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{border-color:var(--border2);background:var(--border)}
+.btn-green{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}.btn-green:hover{background:#bbf7d0}
+.btn-blue{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}.btn-blue:hover{background:#bfdbfe}
+.btn-red{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}.btn-red:hover{background:#fecaca}
+.btn-amber{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}.btn-amber:hover{background:#fde68a}
+.btn-purple{background:var(--purple-bg);border-color:var(--purple-border);color:var(--purple)}.btn-purple:hover{background:#ede9fe}
+.toggle-detail{font-size:.75rem;color:var(--text3);background:none;border:none;cursor:pointer;padding:3px 0;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px}
+.toggle-detail:hover{color:var(--text)}
+
+/* TASK PANEL */
+.tpanel{display:none;margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--border)}
+.tpanel.open{display:block}
+.tg{margin-bottom:1rem}.tg:last-child{margin-bottom:0}
+.tg-label{font-size:.6875rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.t-fixed{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:.8125rem;color:var(--text2);background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:3px}
+.lock-icon{font-size:.65rem;opacity:.4}
+.t-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);margin-bottom:3px;transition:all .1s}
+.t-item.chk{background:var(--green-bg);border-color:var(--green-border)}
+.t-item input[type=checkbox]{cursor:pointer;flex-shrink:0;accent-color:var(--green)}
+.t-label{font-size:.8125rem;line-height:1.4}
+.t-item.chk .t-label{color:var(--green)}
+.r-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--surface);margin-bottom:3px;transition:all .1s}
+.r-item.sel{background:var(--blue-bg);border-color:var(--blue-border)}
+.r-item.sel .t-label{color:var(--blue)}
+.r-item input{cursor:pointer;flex-shrink:0;accent-color:var(--blue)}
+.field-note{width:100%;padding:9px 11px;font-size:.8125rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;min-height:60px;margin-top:.75rem;transition:border-color .15s}
+.field-note:focus{outline:none;border-color:var(--border2)}
+.field-note::placeholder{color:var(--text3)}
+
+/* DATE EDIT */
+.date-section{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem;margin-bottom:1rem}
+.date-edit-row{display:flex;align-items:center;gap:8px;margin-bottom:.5rem;flex-wrap:wrap}
+.date-edit-label{font-size:.75rem;color:var(--text2);font-weight:600;min-width:110px}
+.date-edit-input{padding:6px 9px;font-size:.8125rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;transition:border-color .15s;width:160px}
+.date-edit-input:focus{outline:none;border-color:var(--blue-border)}
+.date-hint{font-size:.7rem;color:var(--text3);margin-top:.375rem}
+.date-actions{display:flex;gap:7px;margin-top:.625rem}
+
+/* SMS */
+.sms-box{margin-top:.875rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:1rem}
+.sms-header{font-size:.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.sms-body{font-size:.75rem;line-height:1.75;white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Mono',monospace;color:var(--text)}
+.sms-footer{margin-top:.625rem;display:flex;align-items:center;gap:8px}
+.copy-hint{font-size:.75rem;color:var(--text3);flex:1}
+
+/* COMMENTS */
+.comment-box{margin-top:.75rem;padding:9px 12px;background:var(--blue-bg);border-radius:var(--radius-sm);border-left:3px solid var(--blue-border)}
+.comment-author{font-size:.6875rem;font-weight:600;color:var(--blue);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.comment-text{font-size:.8125rem;color:var(--text)}
+.note-owner{margin-top:.5rem;padding:8px 10px;background:var(--amber-bg);border-radius:var(--radius-sm);font-size:.8125rem;color:var(--amber);border-left:3px solid var(--amber-border)}
+
+/* CARINE */
+.c-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1.125rem;margin-bottom:10px}
+.c-title{font-size:1rem;font-weight:600;letter-spacing:-.02em;margin-bottom:3px;line-height:1.3}
+.c-sub{font-size:.8125rem;color:var(--text2);margin-bottom:.625rem}
+.c-window{font-size:.75rem;color:var(--text3);margin-bottom:.875rem;padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);display:flex;align-items:center;gap:6px}
+.c-tasks{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:.75rem}
+.c-task{display:flex;align-items:center;gap:8px;padding:7px 11px;font-size:.8125rem;border-bottom:1px solid var(--border)}
+.c-task:last-child{border-bottom:none}
+.task-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.c-comment-area{width:100%;padding:9px 11px;font-size:.8125rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;min-height:56px;margin-bottom:.625rem;transition:border-color .15s}
+.c-comment-area:focus{outline:none;border-color:var(--border2)}
+.c-comment-area::placeholder{color:var(--text3)}
+.c-btns{display:flex;gap:8px}
+.c-btns .btn{flex:1;justify-content:center;padding:9px;font-size:.875rem;font-weight:600}
+.ok-tag{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);font-weight:600}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:500px){.modal-overlay{align-items:center}}
+.modal{background:var(--surface);border-radius:18px 18px 0 0;padding:1.5rem 1.25rem;width:100%;max-width:480px;max-height:92vh;overflow-y:auto}
+@media(min-width:500px){.modal{border-radius:14px}}
+.modal-title{font-size:1rem;font-weight:600;letter-spacing:-.02em;margin-bottom:.25rem}
+.modal-sub{font-size:.8125rem;color:var(--text2);margin-bottom:1.25rem}
+.field-group{margin-bottom:1rem}
+.field-label{font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:.375rem;display:block}
+.field-input{width:100%;padding:9px 11px;font-size:.875rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;transition:border-color .15s}
+.field-input:focus{outline:none;border-color:var(--blue-border)}
+.field-input.error{border-color:var(--red-border);background:var(--red-bg)}
+.field-date{font-family:'DM Mono',monospace}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.conflict-warn{background:var(--red-bg);border:1.5px solid var(--red-border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:.875rem;font-size:.8125rem;color:var(--red)}
+.conflict-warn strong{display:block;margin-bottom:4px}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.modal-actions .btn{flex:1;justify-content:center;padding:10px;font-weight:600}
+
+/* FAB */
+.fab{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;border:none;border-radius:14px;padding:11px 18px;font-size:.875rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,0,0,.22);transition:all .15s;z-index:50}
+.fab:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.28)}
+
+/* SYNC INDICATOR */
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-left:6px;vertical-align:middle}
+.sync-dot.saving{background:var(--amber);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="app"></div></div>
+<div id="modal-root"></div>
+<script>
+// ═══════════════════════════════════════════════════════
+// ⚙️  CONFIGURATION — À remplir avec vos clés Supabase
+//     (voir guide d'installation)
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://crubkjxhwkuugmcvxzbz.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNydWJranhod2t1dWdtY3Z4emJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjYwNTAsImV4cCI6MjA5MjU0MjA1MH0.CEUoX5Z2qb_9oRCnvfAEIOZfy3E-eknKzc_dRiXXUoo';
+
+const ICAL_URL = "https://www.airbnb.fr/calendar/ical/1422386081154405729.ics?t=01221f279fc8483c84960137dcdc7f77";
+const FIXED    = ['Salon','Chambre rez-de-chaussée','Cuisine','Salle de bain(s)','WC'];
+const DEFS     = {draps_retrait:true,draps_pose:true,etage:'complet',escalier:false,sas:false};
+const OWNER_PWD = 'gite2025';
+
+// ── état ──
+let user=null, icalRes=[], adhocRes=[];
+let assign={}, tasks={}, onotes={}, ccomments={}, panels={}, dateOverrides={};
+let icDone=false, icMode='loading';
+let syncState='ok'; // ok | saving | error
+
+// ── Supabase helpers ──
+async function sbGet(){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/menage_state?id=eq.singleton&select=data`,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+  });
+  if(!r.ok)throw new Error('GET failed');
+  const rows=await r.json();
+  return rows[0]?.data||null;
+}
+
+async function sbSet(data){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/menage_state?id=eq.singleton`,{
+    method:'PATCH',
+    headers:{
+      'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,
+      'Content-Type':'application/json','Prefer':'return=minimal'
+    },
+    body:JSON.stringify({data,updated_at:new Date().toISOString()})
+  });
+  if(!r.ok)throw new Error('PATCH failed');
+}
+
+// ── sérialisation ──
+function serialize(){
+  return{
+    assign,tasks,onotes,ccomments,
+    adhoc:adhocRes.map(r=>({...r,
+      start:r.start.toISOString(),end:r.end.toISOString(),checkout:r.checkout.toISOString()
+    })),
+    overrides:Object.fromEntries(Object.entries(dateOverrides).map(([id,v])=>[id,{
+      checkout:v.checkout?v.checkout.toISOString():null,
+      nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?v.nextCheckin.toISOString():null):undefined
+    }]))
+  };
+}
+
+function deserialize(s){
+  if(!s)return;
+  assign    = s.assign||{};
+  tasks     = s.tasks||{};
+  onotes    = s.onotes||{};
+  ccomments = s.ccomments||{};
+  adhocRes  = (s.adhoc||[]).map(r=>({...r,
+    start:new Date(r.start),end:new Date(r.end),checkout:new Date(r.checkout)
+  }));
+  if(s.overrides){
+    for(const[id,v]of Object.entries(s.overrides)){
+      dateOverrides[id]={
+        checkout:v.checkout?new Date(v.checkout):null,
+        nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?new Date(v.nextCheckin):null):undefined
+      };
+    }
+  }
+}
+
+// ── save/load avec indicateur visuel ──
+let saveTimer=null;
+async function save(){
+  // debounce 800ms pour éviter les écritures en rafale
+  clearTimeout(saveTimer);
+  syncState='saving'; updateSyncDot();
+  saveTimer=setTimeout(async()=>{
+    try{
+      await sbSet(serialize());
+      syncState='ok';
+    }catch(e){
+      syncState='error';
+      console.error('Supabase save error',e);
+    }
+    updateSyncDot();
+  },800);
+}
+
+async function load(){
+  try{
+    const data=await sbGet();
+    deserialize(data);
+  }catch(e){
+    console.error('Supabase load error',e);
+    // Fallback localStorage si Supabase indispo (ex : projet en pause)
+    try{
+      const local=localStorage.getItem('menage_fallback');
+      if(local)deserialize(JSON.parse(local));
+    }catch(_){}
+  }
+}
+
+function updateSyncDot(){
+  const dot=document.getElementById('sync-dot');
+  if(!dot)return;
+  dot.className='sync-dot'+(syncState==='saving'?' saving':syncState==='error'?' error':'');
+  dot.title=syncState==='ok'?'Synchronisé':syncState==='saving'?'Enregistrement…':'Erreur de synchro';
+}
+
+// ── iCal ──
+function parseICS(t){
+  const ev=[];
+  t.split('BEGIN:VEVENT').slice(1).forEach(b=>{
+    const sum=(b.match(/SUMMARY:(.+)/)||[])[1]?.trim()||'';
+    if(sum.toLowerCase().includes('not available')||sum.toLowerCase()==='airbnb'||!sum)return;
+    const ds=(b.match(/DTSTART;VALUE=DATE:(\d+)/)||b.match(/DTSTART:(\d{8})/)||[])[1];
+    const de=(b.match(/DTEND;VALUE=DATE:(\d+)/)||b.match(/DTEND:(\d{8})/)||[])[1];
+    if(!ds||!de)return;
+    const s=pd(ds),e=pd(de),n=Math.round((e-s)/86400000);
+    if(n>0&&e>=new Date())ev.push({id:'r'+ds,start:s,end:e,nights:n,checkout:e,source:'airbnb'});
+  });
+  return ev.sort((a,b)=>a.start-b.start);
+}
+function pd(s){return new Date(s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8));}
+
+// ── formatting ──
+function allRes(){return[...icalRes,...adhocRes].sort((a,b)=>a.checkout-b.checkout);}
+function fmtMed(d){return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});}
+function fmtShort(d){return d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});}
+function fmtInput(d){return d.toISOString().slice(0,10);}
+
+function getEffective(r){
+  const ov=dateOverrides[r.id]||{};
+  const checkout=ov.checkout||r.checkout;
+  let nextCheckin;
+  if(ov.nextCheckin!==undefined){nextCheckin=ov.nextCheckin;}
+  else{const all=allRes(),idx=all.findIndex(x=>x.id===r.id),next=all[idx+1];nextCheckin=next?next.start:null;}
+  return{checkout,nextCheckin};
+}
+
+function getMissionTitle(r){
+  const{checkout,nextCheckin}=getEffective(r);
+  if(nextCheckin)return`Ménage entre le ${fmtMed(checkout)} → ${fmtMed(nextCheckin)}`;
+  return`Ménage à partir du ${fmtMed(checkout)}`;
+}
+function getWindowStr(r){
+  const{checkout,nextCheckin}=getEffective(r);
+  const from=fmtMed(checkout)+' à 11h';
+  if(nextCheckin)return`${from} → ${fmtMed(nextCheckin)} à 16h`;
+  return`À partir du ${from}`;
+}
+
+// ── tasks ──
+function initTask(id){if(!tasks[id])tasks[id]={...DEFS};}
+function getLines(id){
+  const s=tasks[id]||DEFS,l=[...FIXED];
+  if(s.draps_retrait&&s.draps_pose)l.push('Remplacement complet des draps');
+  else if(s.draps_retrait)l.push('Retrait des draps sales');
+  else if(s.draps_pose)l.push('Pose des draps propres');
+  if(s.etage==='complet')l.push('Étage : nettoyage complet (aspirateur + serpillère)');
+  else if(s.etage==='aspir')l.push('Étage : aspirateur uniquement');
+  if(s.escalier)l.push('Escalier');
+  if(s.sas)l.push("Sas d'entrée");
+  return l;
+}
+function buildSMS(r){
+  const{checkout}=getEffective(r);
+  const lines=getLines(r.id).map(l=>'  • '+l).join('\n');
+  const note=onotes[r.id]?'\n\nNote : '+onotes[r.id]:'';
+  const ctx=r.nights?`suite à un séjour de ${r.nights} nuit${r.nights>1?'s':''}`:'prévu';
+  return`Bonjour Carine,\n\nSeriez-vous disponible le ${fmtShort(checkout)} pour un ménage ${ctx} ?\n\nPrestations :\n${lines}${note}\n\nMerci de confirmer votre disponibilité.`;
+}
+
+// ── conflicts ──
+function detectConflicts(coDate,ciDate,excludeId=null){
+  const hits=new Set();
+  allRes().filter(r=>r.id!==excludeId).forEach(r=>{
+    if(coDate>=r.start&&coDate<r.end)hits.add(r);
+    if(ciDate&&ciDate>r.start&&ciDate<=r.end)hits.add(r);
+  });
+  return[...hits];
+}
+
+// ── actions ──
+async function doMe(id){assign[id]={who:'me'};panels[id]=false;await save();render();}
+async function doCarine(id){assign[id]={who:'carine',status:'pending'};panels[id]=true;await save();render();}
+async function doUnassign(id){delete assign[id];await save();render();}
+function togPanel(id){panels[id]=!panels[id];render();}
+function togTask(id,k){initTask(id);tasks[id][k]=!tasks[id][k];render();}
+function setRadio(id,v){initTask(id);tasks[id].etage=v;render();}
+async function saveNote(id){const el=document.getElementById('n_'+id);if(el){onotes[id]=el.value;await save();}}
+async function carineReply(id,ok){
+  const el=document.getElementById('cc_'+id);
+  if(el&&el.value.trim())ccomments[id]=el.value.trim();
+  assign[id]={who:'carine',status:ok?'confirmed':'declined'};
+  await save();render();
+}
+async function deleteAdhoc(id){
+  adhocRes=adhocRes.filter(r=>r.id!==id);
+  delete assign[id];delete tasks[id];delete onotes[id];delete ccomments[id];delete dateOverrides[id];
+  await save();render();
+}
+async function saveDates(id){
+  const coEl=document.getElementById('de_co_'+id),ciEl=document.getElementById('de_ci_'+id);
+  if(!dateOverrides[id])dateOverrides[id]={};
+  if(coEl&&coEl.value)dateOverrides[id].checkout=new Date(coEl.value);
+  if(ciEl)dateOverrides[id].nextCheckin=ciEl.value?new Date(ciEl.value):null;
+  await save();render();
+}
+async function resetDates(id){delete dateOverrides[id];await save();render();}
+
+function copySms(id){
+  const r=allRes().find(x=>x.id===id),text=buildSMS(r);
+  navigator.clipboard.writeText(text).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  });
+  const b=document.getElementById('cb_'+id);
+  if(b){b.textContent='✓ Copié !';b.className='btn btn-green';setTimeout(()=>{b.textContent='Copier le SMS';b.className='btn';},2500);}
+}
+
+// ── badges / dots ──
+function getBadge(id,isAdhoc){
+  const a=assign[id],at=isAdhoc?'<span class="badge b-adhoc">Ad-hoc</span> ':'';
+  if(!a)return at+'<span class="badge b-none">À assigner</span>';
+  if(a.who==='me')return at+'<span class="badge b-me">Je m\'en charge</span>';
+  if(a.who==='carine'){
+    if(a.status==='pending')return at+'<span class="badge b-cp">Carine — attente</span>';
+    if(a.status==='confirmed')return at+'<span class="badge b-ok">Carine — confirmé ✓</span>';
+    if(a.status==='declined')return at+'<span class="badge b-ko">Carine — indispo ✗</span>';
+  }
+  return at;
+}
+function getDot(id){
+  const a=assign[id];
+  if(!a)return 'd-none';
+  if(a.who==='me')return 'd-me';
+  if(a.who==='carine')return a.status==='confirmed'?'d-ok':a.status==='declined'?'d-ko':'d-cp';
+  return 'd-none';
+}
+
+// ── date edit section ──
+function dateEditSection(r){
+  const{checkout,nextCheckin}=getEffective(r),hasOv=!!dateOverrides[r.id];
+  return`<div class="date-section">
+    <div class="tg-label" style="margin-bottom:.625rem">Modifier la fenêtre de ménage</div>
+    <div class="date-edit-row">
+      <span class="date-edit-label">Check-out (départ)</span>
+      <input type="date" class="date-edit-input" id="de_co_${r.id}" value="${fmtInput(checkout)}">
+      <span style="font-size:.75rem;color:var(--text3)">à 11h</span>
+    </div>
+    <div class="date-edit-row">
+      <span class="date-edit-label">Check-in suivant</span>
+      <input type="date" class="date-edit-input" id="de_ci_${r.id}" value="${nextCheckin?fmtInput(nextCheckin):''}">
+      <span style="font-size:.75rem;color:var(--text3)">à 16h</span>
+    </div>
+    <div class="date-hint">Laisser le check-in suivant vide = fenêtre sans contrainte de fin</div>
+    <div class="date-actions">
+      <button class="btn btn-blue" onclick="saveDates('${r.id}')">Enregistrer</button>
+      ${hasOv?`<button class="btn" onclick="resetDates('${r.id}')">Réinitialiser</button>`:''}
+    </div>
+  </div>`;
+}
+
+// ── task panel ──
+function taskPanel(r){
+  const s=tasks[r.id]||{...DEFS},a=assign[r.id],cc=ccomments[r.id],isAdhoc=r.source==='adhoc';
+  function chk(k,lbl){const c=s[k];return`<div class="t-item${c?' chk':''}" onclick="togTask('${r.id}','${k}')"><input type="checkbox" ${c?'checked':''} onclick="event.stopPropagation();togTask('${r.id}','${k}')"><span class="t-label">${lbl}</span></div>`;}
+  function rad(v,lbl){const c=s.etage===v;return`<div class="r-item${c?' sel':''}" onclick="setRadio('${r.id}','${v}')"><input type="radio" name="e_${r.id}" ${c?'checked':''} onclick="event.stopPropagation();setRadio('${r.id}','${v}')"><span class="t-label">${lbl}</span></div>`;}
+  return`
+    ${dateEditSection(r)}
+    <div class="tg"><div class="tg-label">Toujours inclus</div>${FIXED.map(t=>`<div class="t-fixed"><span class="lock-icon">🔒</span>${t}</div>`).join('')}</div>
+    <div class="tg"><div class="tg-label">Draps</div>${chk('draps_retrait','Retrait des draps sales')}${chk('draps_pose','Pose des draps propres')}</div>
+    <div class="tg"><div class="tg-label">Étage</div>${rad('complet','Nettoyage complet (aspirateur + serpillère)')}${rad('aspir','Aspirateur uniquement (pas de serpillère)')}${rad('aucun',"Pas d'intervention à l'étage")}</div>
+    <div class="tg"><div class="tg-label">Zones optionnelles</div>${chk('escalier','Escalier')}${chk('sas',"Sas d'entrée")}</div>
+    <textarea class="field-note" id="n_${r.id}" placeholder="Note pour Carine…" onchange="saveNote('${r.id}')">${onotes[r.id]||''}</textarea>
+    ${cc?`<div class="comment-box" style="margin-top:.75rem"><div class="comment-author">Commentaire de Carine</div><div class="comment-text">${cc}</div></div>`:''}
+    ${a?.who==='carine'?`<div class="sms-box"><div class="sms-header">📱 SMS pré-rédigé</div><div class="sms-body">${buildSMS(r)}</div><div class="sms-footer"><span class="copy-hint">Copiez puis envoyez à Carine</span><button class="btn" id="cb_${r.id}" onclick="copySms('${r.id}')">Copier le SMS</button></div></div>`:''}
+    ${isAdhoc?`<div style="margin-top:1rem;padding-top:.875rem;border-top:1px solid var(--border)"><button class="btn btn-red" onclick="deleteAdhoc('${r.id}')">Supprimer cette mission</button></div>`:''}
+  `;
+}
+
+// ── owner card ──
+function ownerCard(r,opts={}){
+  initTask(r.id);
+  const a=assign[r.id],open=panels[r.id],cc=ccomments[r.id],isAdhoc=r.source==='adhoc';
+  const declined=a?.who==='carine'&&a?.status==='declined';
+  const sub=r.source==='airbnb'?`${r.nights} nuit${r.nights>1?'s':''} · Airbnb`:(r.platform||'Mission ponctuelle');
+  let actions='';
+  if(!a)actions=`<button class="btn btn-green" onclick="doMe('${r.id}')">Je m'en charge</button><button class="btn btn-blue" onclick="doCarine('${r.id}')">Envoyer à Carine</button>`;
+  if(opts.canSendCarine)actions=`<button class="btn btn-blue" onclick="doCarine('${r.id}')">Passer à Carine</button>`;
+  if(opts.canUnassign)actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button>`;
+  return`<div class="card${declined?' has-alert':''}${isAdhoc?' is-adhoc':''}">
+    <div class="card-top">
+      <span class="card-dot ${getDot(r.id)}"></span>
+      <div class="card-info">
+        <div class="card-title">${getMissionTitle(r)}</div>
+        <div class="card-sub">${sub}</div>
+      </div>
+      <div class="card-right">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getBadge(r.id,isAdhoc)}</div>
+        <button class="toggle-detail" onclick="togPanel('${r.id}')">${open?'▲ moins':'▼ détail'}</button>
+      </div>
+    </div>
+    ${cc&&!open?`<div class="comment-box" style="margin-top:.75rem"><div class="comment-author">Commentaire de Carine</div><div class="comment-text">${cc}</div></div>`:''}
+    ${declined&&!open?`<div style="font-size:.8125rem;color:var(--red);margin-top:.5rem;padding:7px 10px;background:var(--red-bg);border-radius:6px">⚠ Carine n'est pas disponible — réassignez cette mission.</div>`:''}
+    ${actions?`<div class="card-actions">${actions}</div>`:''}
+    <div class="tpanel${open?' open':''}">${taskPanel(r)}</div>
+  </div>`;
+}
+
+// ── carine card ──
+function carineCard(r,showActions){
+  const lines=getLines(r.id),note=onotes[r.id],cc=ccomments[r.id];
+  const sub=r.source==='airbnb'?`Séjour ${r.nights} nuit${r.nights>1?'s':''} · Airbnb`:(r.platform||'Mission ponctuelle');
+  return`<div class="c-card">
+    <div class="c-title">${getMissionTitle(r)}</div>
+    <div class="c-sub">${sub}</div>
+    <div class="c-window"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Fenêtre : ${getWindowStr(r)}</div>
+    <div class="c-tasks">${lines.map(l=>`<div class="c-task"><span class="task-dot"></span>${l}</div>`).join('')}</div>
+    ${note?`<div class="note-owner">📝 Note du propriétaire : ${note}</div>`:''}
+    ${showActions?`
+      <div style="font-size:.75rem;color:var(--text3);margin:.875rem 0 .375rem;font-weight:500">Votre commentaire (optionnel)</div>
+      <textarea class="c-comment-area" id="cc_${r.id}" placeholder="Disponible à partir de 10h…">${cc||''}</textarea>
+      <div class="c-btns"><button class="btn btn-green" onclick="carineReply('${r.id}',true)">✓ Disponible</button><button class="btn btn-red" onclick="carineReply('${r.id}',false)">✗ Pas disponible</button></div>
+    `:`<div style="margin-top:.625rem"><span class="ok-tag">✓ Mission acceptée</span></div>${cc?`<div class="comment-box" style="margin-top:.75rem"><div class="comment-author">Votre commentaire</div><div class="comment-text">${cc}</div></div>`:''}`}
+  </div>`;
+}
+
+// ── modal ──
+function openModal(){
+  document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="handleOverlay(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">Nouvelle mission ad-hoc</div>
+      <div class="modal-sub">Réservation hors Airbnb ou ménage ponctuel</div>
+      <div class="field-group"><label class="field-label">Plateforme / description</label><input type="text" class="field-input" id="m-plat" placeholder="Booking.com, famille, ménage de saison…"></div>
+      <div class="field-row">
+        <div class="field-group"><label class="field-label">Date de check-out *</label><input type="date" class="field-input field-date" id="m-co" oninput="modalCheckConflicts()"></div>
+        <div class="field-group"><label class="field-label">Check-in suivant</label><input type="date" class="field-input field-date" id="m-ci" oninput="modalCheckConflicts()"></div>
+      </div>
+      <div class="field-group"><label class="field-label">Durée du séjour (nuits)</label><input type="number" class="field-input" id="m-nights" min="1" placeholder="ex : 2"></div>
+      <div id="m-conf"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Annuler</button>
+        <button class="btn btn-purple" onclick="submitModal()">＋ Créer</button>
+      </div>
+    </div>
+  </div>`;
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+function handleOverlay(e){if(e.target.classList.contains('modal-overlay'))closeModal();}
+function modalCheckConflicts(){
+  const coV=document.getElementById('m-co')?.value,ciV=document.getElementById('m-ci')?.value,box=document.getElementById('m-conf');
+  if(!coV){box.innerHTML='';return;}
+  const hits=detectConflicts(new Date(coV),ciV?new Date(ciV):null);
+  box.innerHTML=hits.length?`<div class="conflict-warn"><strong>⚠ Conflit avec ${hits.length} séjour${hits.length>1?'s':''} existant${hits.length>1?'s':''}</strong>${hits.map(h=>`<div>• ${getMissionTitle(h)}</div>`).join('')}<div style="margin-top:5px;opacity:.75;font-size:.75rem">Vous pouvez quand même créer la mission.</div></div>`:'';
+}
+async function submitModal(){
+  const coV=document.getElementById('m-co')?.value;
+  if(!coV){document.getElementById('m-co').classList.add('error');return;}
+  const co=new Date(coV),ciV=document.getElementById('m-ci')?.value,ci=ciV?new Date(ciV):null;
+  const nights=parseInt(document.getElementById('m-nights')?.value)||null;
+  const plat=document.getElementById('m-plat')?.value.trim()||'Mission ponctuelle';
+  const id='ah_'+Date.now();
+  const startD=new Date(co);if(nights)startD.setDate(startD.getDate()-nights);
+  adhocRes.push({id,start:startD,end:co,nights,checkout:co,source:'adhoc',platform:plat});
+  if(ci)dateOverrides[id]={checkout:co,nextCheckin:ci};
+  await save();closeModal();render();
+}
+
+// ── screens ──
+function renderLogin(){
+  return`<div class="login-screen">
+    <div class="login-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <div class="login-title">Planning ménage</div>
+    <div class="login-sub">Choisissez votre espace</div>
+    <div class="profile-grid">
+      <div class="profile-card" onclick="setUser('owner')"><div class="p-avatar av-o">P</div><div class="p-name">Propriétaire</div><div class="p-role">Gestion & assignation</div></div>
+      <div class="profile-card" onclick="setUser('carine')"><div class="p-avatar av-c">C</div><div class="p-name">Carine</div><div class="p-role">Mes missions</div></div>
+    </div>
+  </div>`;
+}
+function renderPwdScreen(){
+  document.getElementById('app').innerHTML=`<div class="pwd-screen">
+    <div class="pwd-back" onclick="render()">← Retour</div>
+    <div class="pwd-card">
+      <div class="pwd-title">Espace propriétaire</div>
+      <div class="pwd-sub">Saisissez votre mot de passe</div>
+      <input class="pwd-input" id="pwd-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPwd()">
+      <button class="pwd-btn" onclick="checkPwd()">Accéder</button>
+      <div class="pwd-err" id="pwd-err">Mot de passe incorrect</div>
+    </div>
+  </div>`;
+  setTimeout(()=>document.getElementById('pwd-input')?.focus(),50);
+}
+function checkPwd(){
+  if(document.getElementById('pwd-input').value===OWNER_PWD){user='owner';render();}
+  else{document.getElementById('pwd-err').classList.add('show');document.getElementById('pwd-input').value='';}
+}
+function setUser(u){if(u==='owner'){renderPwdScreen();return;}user=u;render();}
+function logout(){user=null;render();}
+
+function renderOwner(){
+  const all=allRes(),none=all.filter(r=>!assign[r.id]),mine=all.filter(r=>assign[r.id]?.who==='me'),car=all.filter(r=>assign[r.id]?.who==='carine');
+  const pend=car.filter(r=>assign[r.id].status==='pending').length,conf=car.filter(r=>assign[r.id].status==='confirmed').length,decl=car.filter(r=>assign[r.id].status==='declined').length;
+  const alert=decl>0?`<div class="alert-banner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="alert-banner-text">${decl} mission${decl>1?'s':''} refusée${decl>1?'s':''} par Carine — action requise</div></div>`:'';
+  const icL=icMode==='demo'?'<span class="ical-status ical-demo">Mode démo</span>':icMode==='live'?`<span class="ical-status ical-ok">${icalRes.length} rés. Airbnb</span>`:'<span class="ical-status ical-loading">Chargement…</span>';
+  return`
+    <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${icMode==='demo'?'mode démonstration':'1422386081154405729'}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
+    ${alert}
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Non assignés</div><div class="stat-value${none.length?' alert':''}">${none.length}</div></div>
+      <div class="stat"><div class="stat-label">Mes missions</div><div class="stat-value">${mine.length}</div></div>
+      <div class="stat"><div class="stat-label">Carine — attente</div><div class="stat-value">${pend}</div></div>
+      <div class="stat"><div class="stat-label">Carine — confirmés</div><div class="stat-value">${conf}</div></div>
+    </div>
+    ${none.length?`<div class="sec-div">À assigner <span class="sec-count">${none.length}</span></div>${none.map(r=>ownerCard(r)).join('')}`:''}
+    <div class="sec-div">Mes missions <span class="sec-count">${mine.length}</span></div>
+    ${mine.length?mine.map(r=>ownerCard(r,{canSendCarine:true})).join(''):'<div class="empty">Aucune mission assignée</div>'}
+    <div class="sec-div">Chez Carine <span class="sec-count">${car.length}</span></div>
+    ${car.length?car.map(r=>ownerCard(r,{canUnassign:true})).join(''):'<div class="empty">Aucune mission confiée à Carine</div>'}
+    <button class="fab" onclick="openModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Mission ad-hoc</button>
+  `;
+}
+
+function renderCarine(){
+  const all=allRes(),pend=all.filter(r=>assign[r.id]?.who==='carine'&&assign[r.id].status==='pending'),conf=all.filter(r=>assign[r.id]?.who==='carine'&&assign[r.id].status==='confirmed');
+  return`
+    ${pend.length?`<div class="sec-div">Demandes en attente <span class="sec-count">${pend.length}</span></div>${pend.map(r=>carineCard(r,true)).join('')}`:'<div class="empty" style="padding:1rem 0">Aucune demande en attente.</div>'}
+    <div class="sec-div">Missions confirmées <span class="sec-count">${conf.length}</span></div>
+    ${conf.length?conf.map(r=>carineCard(r,false)).join(''):'<div class="empty">Aucune mission confirmée</div>'}
+  `;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(!user){app.innerHTML=renderLogin();return;}
+  const tb=`<div class="topbar"><div class="topbar-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div class="topbar-title">${user==='owner'?'Propriétaire':'Bonjour Carine'}</div><button class="switch-btn" onclick="logout()">Changer de profil</button></div>`;
+  app.innerHTML=tb+(user==='owner'?renderOwner():renderCarine());
+}
+
+async function loadIcal(){
+  icMode='loading';
+  try{
+    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(ICAL_URL));
+    if(!r.ok)throw 0;
+    const t=await r.text();
+    if(!t.includes('BEGIN:VCALENDAR'))throw 0;
+    icalRes=parseICS(t);icMode='live';
+  }catch{
+    const d=n=>{const dt=new Date();dt.setDate(dt.getDate()+n);dt.setHours(0,0,0,0);return dt;};
+    icalRes=[
+      {id:'d1',start:d(3),end:d(7),nights:4,checkout:d(7),source:'airbnb'},
+      {id:'d2',start:d(12),end:d(15),nights:3,checkout:d(15),source:'airbnb'},
+      {id:'d3',start:d(22),end:d(26),nights:4,checkout:d(26),source:'airbnb'},
+    ];
+    icMode='demo';
+  }
+  icDone=true;render();
+}
+
+(async()=>{
+  render(); // affiche l'écran de login immédiatement
+  await load();
+  render();
+  await loadIcal();
+})();
+</script>
+</body>
+</html>
