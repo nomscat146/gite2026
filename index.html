@@ -619,12 +619,12 @@ function renderOwner(){
   const pend=car.filter(r=>assign[r.id].status==='pending').length,conf=car.filter(r=>assign[r.id].status==='confirmed').length,decl=car.filter(r=>assign[r.id].status==='declined').length;
   const alert=decl>0?`<div class="alert-banner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="alert-banner-text">${decl} mission${decl>1?'s':''} refusée${decl>1?'s':''} par Carine — action requise</div></div>`:'';
   const icL=icMode==='demo'?'<span class="ical-status ical-demo">Mode démo</span>':icMode==='live'?`<span class="ical-status ical-ok">${icalRes.length} rés. Airbnb</span>`:'<span class="ical-status ical-loading">Chargement…</span>';
-  const icalSetup=!icalUrl?`<div class="date-section" style="margin-bottom:1.25rem">
+  const icalSetup=`<div class="date-section" style="margin-bottom:1.25rem">
     <div class="tg-label" style="margin-bottom:.5rem">Lien iCal Airbnb</div>
-    <div style="font-size:.8125rem;color:var(--text2);margin-bottom:.625rem">Copiez l'URL depuis Airbnb → Calendrier → Synchroniser → Exporter.</div>
-    <input type="url" class="field-input" id="ical-input" placeholder="https://www.airbnb.fr/calendar/ical/…" style="font-size:.8125rem;font-family:'DM Mono',monospace">
+    <div style="font-size:.8125rem;color:var(--text2);margin-bottom:.625rem">Copiez l'URL depuis Airbnb → Calendrier → Connecter des calendriers → Exporter le calendrier.</div>
+    <input type="url" class="field-input" id="ical-input" value="${icalUrl}" placeholder="https://www.airbnb.fr/calendar/ical/….ics?t=…" style="font-size:.8125rem;font-family:'DM Mono',monospace">
     <div style="margin-top:.625rem"><button class="btn btn-blue" onclick="saveIcalUrl()">Enregistrer</button></div>
-  </div>`:'';
+  </div>`;
   return`
     <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${icMode==='demo'?'non configuré':new URL(icalUrl).pathname.split('/').pop()}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
     ${icalSetup}
