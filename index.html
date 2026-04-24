@@ -88,7 +88,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* CARD */
 .card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.125rem;margin-bottom:10px}
 .card.has-alert{border-color:var(--red-border)}
-.card.is-adhoc{border-left:3px solid var(--purple)}
 .card-top{display:flex;align-items:flex-start;gap:10px}
 .card-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:8px}
 .d-none{background:#d4c9bf}.d-me{background:#22c55e}.d-cp{background:#3b82f6}.d-ok{background:#22c55e}.d-ko{background:#ef4444}
@@ -104,7 +103,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .b-cp{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
 .b-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .b-ko{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.b-adhoc{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
 
 /* BUTTONS */
 .card-actions{display:flex;gap:7px;margin-top:.875rem;flex-wrap:wrap}
@@ -434,16 +432,16 @@ function copySms(id){
 }
 
 // ── badges / dots ──
-function getBadge(id,isAdhoc){
-  const a=assign[id],at=isAdhoc?'<span class="badge b-adhoc">Ad-hoc</span> ':'';
-  if(!a)return at+'<span class="badge b-none">À assigner</span>';
-  if(a.who==='me')return at+'<span class="badge b-me">Je m\'en charge</span>';
+function getBadge(id){
+  const a=assign[id];
+  if(!a)return '<span class="badge b-none">À assigner</span>';
+  if(a.who==='me')return '<span class="badge b-me">Je m\'en charge</span>';
   if(a.who==='carine'){
-    if(a.status==='pending')return at+'<span class="badge b-cp">Carine — attente</span>';
-    if(a.status==='confirmed')return at+'<span class="badge b-ok">Carine — confirmé ✓</span>';
-    if(a.status==='declined')return at+'<span class="badge b-ko">Carine — indispo ✗</span>';
+    if(a.status==='pending')return '<span class="badge b-cp">Carine — attente</span>';
+    if(a.status==='confirmed')return '<span class="badge b-ok">Carine — confirmé ✓</span>';
+    if(a.status==='declined')return '<span class="badge b-ko">Carine — indispo ✗</span>';
   }
-  return at;
+  return '';
 }
 function getDot(id){
   const a=assign[id];
@@ -504,7 +502,7 @@ function ownerCard(r,opts={}){
   if(!a)actions=`<button class="btn btn-green" onclick="doMe('${r.id}')">Je m'en charge</button><button class="btn btn-blue" onclick="doCarine('${r.id}')">Envoyer à Carine</button>`;
   if(opts.canSendCarine)actions=`<button class="btn btn-blue" onclick="doCarine('${r.id}')">Passer à Carine</button>`;
   if(opts.canUnassign)actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button>`;
-  return`<div class="card${declined?' has-alert':''}${isAdhoc?' is-adhoc':''}">
+  return`<div class="card${declined?' has-alert':''}">
     <div class="card-top">
       <span class="card-dot ${getDot(r.id)}"></span>
       <div class="card-info">
@@ -512,7 +510,7 @@ function ownerCard(r,opts={}){
         <div class="card-sub">${sub}</div>
       </div>
       <div class="card-right">
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getBadge(r.id,isAdhoc)}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getBadge(r.id)}</div>
         <button class="toggle-detail" onclick="togPanel('${r.id}')">${open?'▲ moins':'▼ détail'}</button>
       </div>
     </div>
