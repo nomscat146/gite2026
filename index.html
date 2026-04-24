@@ -216,7 +216,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 const SUPABASE_URL  = 'https://crubkjxhwkuugmcvxzbz.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNydWJranhod2t1dWdtY3Z4emJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjYwNTAsImV4cCI6MjA5MjU0MjA1MH0.CEUoX5Z2qb_9oRCnvfAEIOZfy3E-eknKzc_dRiXXUoo';
 
-const ICAL_URL = "https://www.airbnb.fr/calendar/ical/1422386081154405729.ics?t=01221f279fc8483c84960137dcdc7f77";
 const FIXED    = ['Salon','Chambre rez-de-chaussée','Cuisine','Salle de bain(s)','WC'];
 const DEFS     = {draps_retrait:true,draps_pose:true,etage:'complet',escalier:false,sas:false};
 const OWNER_PWD = 'gite2025';
@@ -224,6 +223,7 @@ const OWNER_PWD = 'gite2025';
 // ── état ──
 let user=null, icalRes=[], adhocRes=[];
 let assign={}, tasks={}, onotes={}, ccomments={}, panels={}, dateOverrides={};
+let icalUrl='';
 let icDone=false, icMode='loading';
 let syncState='ok'; // ok | saving | error
 
@@ -252,7 +252,7 @@ async function sbSet(data){
 // ── sérialisation ──
 function serialize(){
   return{
-    assign,tasks,onotes,ccomments,
+    assign,tasks,onotes,ccomments,icalUrl,
     adhoc:adhocRes.map(r=>({...r,
       start:r.start.toISOString(),end:r.end.toISOString(),checkout:r.checkout.toISOString()
     })),
@@ -269,6 +269,7 @@ function deserialize(s){
   tasks     = s.tasks||{};
   onotes    = s.onotes||{};
   ccomments = s.ccomments||{};
+  icalUrl   = s.icalUrl||'';
   adhocRes  = (s.adhoc||[]).map(r=>({...r,
     start:new Date(r.start),end:new Date(r.end),checkout:new Date(r.checkout)
   }));
@@ -618,8 +619,15 @@ function renderOwner(){
   const pend=car.filter(r=>assign[r.id].status==='pending').length,conf=car.filter(r=>assign[r.id].status==='confirmed').length,decl=car.filter(r=>assign[r.id].status==='declined').length;
   const alert=decl>0?`<div class="alert-banner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="alert-banner-text">${decl} mission${decl>1?'s':''} refusée${decl>1?'s':''} par Carine — action requise</div></div>`:'';
   const icL=icMode==='demo'?'<span class="ical-status ical-demo">Mode démo</span>':icMode==='live'?`<span class="ical-status ical-ok">${icalRes.length} rés. Airbnb</span>`:'<span class="ical-status ical-loading">Chargement…</span>';
+  const icalSetup=!icalUrl?`<div class="date-section" style="margin-bottom:1.25rem">
+    <div class="tg-label" style="margin-bottom:.5rem">Lien iCal Airbnb</div>
+    <div style="font-size:.8125rem;color:var(--text2);margin-bottom:.625rem">Copiez l'URL depuis Airbnb → Calendrier → Synchroniser → Exporter.</div>
+    <input type="url" class="field-input" id="ical-input" placeholder="https://www.airbnb.fr/calendar/ical/…" style="font-size:.8125rem;font-family:'DM Mono',monospace">
+    <div style="margin-top:.625rem"><button class="btn btn-blue" onclick="saveIcalUrl()">Enregistrer</button></div>
+  </div>`:'';
   return`
-    <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${icMode==='demo'?'mode démonstration':'1422386081154405729'}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
+    <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${icMode==='demo'?'non configuré':new URL(icalUrl).pathname.split('/').pop()}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
+    ${icalSetup}
     ${alert}
     <div class="stat-grid">
       <div class="stat"><div class="stat-label">Non assignés</div><div class="stat-value${none.length?' alert':''}">${none.length}</div></div>
@@ -652,10 +660,19 @@ function render(){
   app.innerHTML=tb+(user==='owner'?renderOwner():renderCarine());
 }
 
+async function saveIcalUrl(){
+  const val=document.getElementById('ical-input')?.value.trim();
+  if(!val||!val.startsWith('http'))return;
+  icalUrl=val;
+  await save();
+  await loadIcal();
+}
+
 async function loadIcal(){
+  if(!icalUrl){icMode='demo';icDone=true;render();return;}
   icMode='loading';
   try{
-    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(ICAL_URL));
+    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(icalUrl));
     if(!r.ok)throw 0;
     const t=await r.text();
     if(!t.includes('BEGIN:VCALENDAR'))throw 0;
