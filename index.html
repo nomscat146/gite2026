@@ -672,7 +672,7 @@ async function loadIcal(){
   if(!icalUrl){icMode='demo';icDone=true;render();return;}
   icMode='loading';
   try{
-    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(icalUrl));
+    const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(icalUrl));
     if(!r.ok)throw 0;
     const t=await r.text();
     if(!t.includes('BEGIN:VCALENDAR'))throw 0;
