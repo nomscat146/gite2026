@@ -568,7 +568,10 @@ function ownerCard(r,opts={}){
   let actions='';
   if(!a)actions=`<button class="btn btn-green" onclick="doMe('${r.id}')">Je m'en charge</button><button class="btn btn-blue" onclick="doCarine('${r.id}')">Envoyer à Carine</button>`;
   if(opts.canSendCarine)actions=`<button class="btn btn-blue" onclick="doCarine('${r.id}')">Passer à Carine</button>`;
-  if(opts.canUnassign)actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button>`;
+  if(opts.canUnassign){
+    const isPending=a?.status==='pending';
+    actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button>${isPending?`<button class="btn btn-red" onclick="deleteMission('${r.id}')">Supprimer</button>`:''}`;
+  }
   return`<div class="card${declined?' has-alert':''}">
     <div class="card-top">
       <span class="card-dot ${getDot(r.id)}"></span>
