@@ -103,6 +103,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .b-cp{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
 .b-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .b-ko{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.b-modified{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
 
 /* BUTTONS */
 .card-actions{display:flex;gap:7px;margin-top:.875rem;flex-wrap:wrap}
@@ -201,6 +202,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-left:6px;vertical-align:middle}
 .sync-dot.saving{background:var(--amber);animation:pulse 1s infinite}
 .sync-dot.error{background:var(--red)}
+.card.is-deleted{opacity:.7;background:var(--red-bg)}
+.diff-box{margin-top:.875rem;padding:.75rem;background:var(--amber-bg);border:1.5px solid var(--amber-border);border-radius:var(--radius-sm)}
+.diff-title{font-size:.6875rem;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.diff-row{display:flex;align-items:center;gap:8px;font-size:.8125rem;margin-bottom:3px}
+.diff-label{flex:1;color:var(--text2)}
+.diff-old{color:var(--red);text-decoration:line-through;font-family:'DM Mono',monospace;font-size:.75rem}
+.diff-arrow{color:var(--text3)}
+.diff-new{color:var(--green);font-family:'DM Mono',monospace;font-size:.75rem;font-weight:600}
 </style>
 </head>
 <body>
@@ -220,7 +229,7 @@ const OWNER_PWD = 'gite2025';
 
 // ── état ──
 let user=null, icalRes=[], adhocRes=[];
-let assign={}, tasks={}, onotes={}, ccomments={}, panels={}, dateOverrides={}, hidden=new Set();
+let assign={}, tasks={}, onotes={}, ccomments={}, panels={}, dateOverrides={}, hidden=new Set(), deleted=new Set(), snapshots={};
 let icalUrl='';
 let icDone=false, icMode='loading';
 let syncState='ok'; // ok | saving | error
@@ -250,7 +259,7 @@ async function sbSet(data){
 // ── sérialisation ──
 function serialize(){
   return{
-    assign,tasks,onotes,ccomments,icalUrl,hidden:[...hidden],
+    assign,tasks,onotes,ccomments,icalUrl,snapshots,hidden:[...hidden],deleted:[...deleted],
     adhoc:adhocRes.map(r=>({...r,
       start:r.start.toISOString(),end:r.end.toISOString(),checkout:r.checkout.toISOString()
     })),
@@ -269,6 +278,8 @@ function deserialize(s){
   ccomments = s.ccomments||{};
   icalUrl   = s.icalUrl||'';
   hidden    = new Set(s.hidden||[]);
+  deleted   = new Set(s.deleted||[]);
+  snapshots = s.snapshots||{};
   adhocRes  = (s.adhoc||[]).map(r=>({...r,
     start:new Date(r.start),end:new Date(r.end),checkout:new Date(r.checkout)
   }));
@@ -338,7 +349,8 @@ function parseICS(t){
 function pd(s){return new Date(s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8));}
 
 // ── formatting ──
-function allRes(){return[...icalRes,...adhocRes].filter(r=>!hidden.has(r.id)).sort((a,b)=>a.checkout-b.checkout);}
+function allRes(){return[...icalRes,...adhocRes].filter(r=>!hidden.has(r.id)&&!deleted.has(r.id)).sort((a,b)=>a.checkout-b.checkout);}
+function deletedRes(){return[...icalRes,...adhocRes].filter(r=>deleted.has(r.id)).sort((a,b)=>a.checkout-b.checkout);}
 function fmtMed(d){return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});}
 function fmtShort(d){return d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});}
 function fmtInput(d){return d.toISOString().slice(0,10);}
@@ -407,12 +419,30 @@ async function carineReply(id,ok){
   const el=document.getElementById('cc_'+id);
   if(el&&el.value.trim())ccomments[id]=el.value.trim();
   assign[id]={who:'carine',status:ok?'confirmed':'declined'};
+  if(ok){
+    const r=allRes().find(x=>x.id===id);
+    const{checkout,nextCheckin}=r?getEffective(r):{};
+    snapshots[id]={
+      tasks:{...(tasks[id]||{...DEFS})},
+      checkout:checkout?checkout.toISOString():null,
+      nextCheckin:nextCheckin?nextCheckin.toISOString():null
+    };
+  }
   await save();render();
 }
 async function deleteMission(id){
-  adhocRes=adhocRes.filter(r=>r.id!==id);
-  hidden.add(id);
-  delete assign[id];delete tasks[id];delete onotes[id];delete ccomments[id];delete dateOverrides[id];
+  const isConfirmed=assign[id]?.who==='carine'&&assign[id]?.status==='confirmed';
+  if(isConfirmed){
+    deleted.add(id);
+  }else{
+    adhocRes=adhocRes.filter(r=>r.id!==id);
+    hidden.add(id);
+    delete assign[id];delete tasks[id];delete onotes[id];delete ccomments[id];delete dateOverrides[id];delete snapshots[id];
+  }
+  await save();render();
+}
+async function restoreMission(id){
+  deleted.delete(id);
   await save();render();
 }
 async function saveDates(id){
@@ -433,14 +463,48 @@ function copySms(id){
   if(b){b.textContent='✓ Copié !';b.className='btn btn-green';setTimeout(()=>{b.textContent='Copier le SMS';b.className='btn';},2500);}
 }
 
+// ── diff ──
+const TASK_LABELS={draps_retrait:'Retrait des draps sales',draps_pose:'Pose des draps propres',etage:'Étage',escalier:'Escalier',sas:"Sas d'entrée"};
+function isModified(id,r){
+  const snap=snapshots[id];if(!snap)return false;
+  const cur=tasks[id]||{...DEFS},st=snap.tasks||{...DEFS};
+  if(['draps_retrait','draps_pose','escalier','sas'].some(k=>cur[k]!==st[k]))return true;
+  if(cur.etage!==st.etage)return true;
+  const{checkout,nextCheckin}=getEffective(r);
+  if(snap.checkout&&checkout.toISOString().slice(0,10)!==snap.checkout.slice(0,10))return true;
+  const nc=nextCheckin?nextCheckin.toISOString().slice(0,10):null;
+  if(nc!==(snap.nextCheckin?snap.nextCheckin.slice(0,10):null))return true;
+  return false;
+}
+function buildDiff(id,r){
+  const snap=snapshots[id];if(!snap)return'';
+  const cur=tasks[id]||{...DEFS},st=snap.tasks||{...DEFS};
+  const lines=[];
+  ['draps_retrait','draps_pose','escalier','sas'].forEach(k=>{
+    if(cur[k]!==st[k])lines.push(`<div class="diff-row"><span class="diff-label">${TASK_LABELS[k]}</span><span class="diff-old">${st[k]?'✓':'✗'}</span><span class="diff-arrow">→</span><span class="diff-new">${cur[k]?'✓':'✗'}</span></div>`);
+  });
+  if(cur.etage!==st.etage)lines.push(`<div class="diff-row"><span class="diff-label">Étage</span><span class="diff-old">${st.etage}</span><span class="diff-arrow">→</span><span class="diff-new">${cur.etage}</span></div>`);
+  const{checkout,nextCheckin}=getEffective(r);
+  if(snap.checkout&&checkout.toISOString().slice(0,10)!==snap.checkout.slice(0,10))
+    lines.push(`<div class="diff-row"><span class="diff-label">Check-out</span><span class="diff-old">${fmtMed(new Date(snap.checkout))}</span><span class="diff-arrow">→</span><span class="diff-new">${fmtMed(checkout)}</span></div>`);
+  const nc=nextCheckin?nextCheckin.toISOString().slice(0,10):null,snc=snap.nextCheckin?snap.nextCheckin.slice(0,10):null;
+  if(nc!==snc)
+    lines.push(`<div class="diff-row"><span class="diff-label">Check-in suivant</span><span class="diff-old">${snc?fmtMed(new Date(snap.nextCheckin)):'—'}</span><span class="diff-arrow">→</span><span class="diff-new">${nextCheckin?fmtMed(nextCheckin):'—'}</span></div>`);
+  if(!lines.length)return'';
+  return`<div class="diff-box"><div class="diff-title">Modifications depuis la confirmation de Carine</div>${lines.join('')}</div>`;
+}
+
 // ── badges / dots ──
-function getBadge(id){
+function getBadge(id,r){
   const a=assign[id];
   if(!a)return '<span class="badge b-none">À assigner</span>';
   if(a.who==='me')return '<span class="badge b-me">Je m\'en charge</span>';
   if(a.who==='carine'){
     if(a.status==='pending')return '<span class="badge b-cp">Carine — attente</span>';
-    if(a.status==='confirmed')return '<span class="badge b-ok">Carine — confirmé ✓</span>';
+    if(a.status==='confirmed'){
+      const mod=r&&isModified(id,r)?'<span class="badge b-modified">Modifiée</span> ':'';
+      return mod+'<span class="badge b-ok">Carine — confirmé ✓</span>';
+    }
     if(a.status==='declined')return '<span class="badge b-ko">Carine — indispo ✗</span>';
   }
   return '';
@@ -489,8 +553,9 @@ function taskPanel(r){
     <div class="tg"><div class="tg-label">Zones optionnelles</div>${chk('escalier','Escalier')}${chk('sas',"Sas d'entrée")}</div>
     <textarea class="field-note" id="n_${r.id}" placeholder="Note pour Carine…" onchange="saveNote('${r.id}')">${onotes[r.id]||''}</textarea>
     ${cc?`<div class="comment-box" style="margin-top:.75rem"><div class="comment-author">Commentaire de Carine</div><div class="comment-text">${cc}</div></div>`:''}
+    ${a?.who==='carine'&&a?.status==='confirmed'?buildDiff(r.id,r):''}
     ${a?.who==='carine'?`<div class="sms-box"><div class="sms-header">📱 SMS pré-rédigé</div><div class="sms-body">${buildSMS(r)}</div><div class="sms-footer"><span class="copy-hint">Copiez puis envoyez à Carine</span><button class="btn" id="cb_${r.id}" onclick="copySms('${r.id}')">Copier le SMS</button></div></div>`:''}
-    ${!a?`<div style="margin-top:1rem;padding-top:.875rem;border-top:1px solid var(--border)"><button class="btn btn-red" onclick="deleteMission('${r.id}')">Supprimer cette mission</button></div>`:''}
+    <div style="margin-top:1rem;padding-top:.875rem;border-top:1px solid var(--border)"><button class="btn btn-red" onclick="deleteMission('${r.id}')">Supprimer cette mission</button></div>
   `;
 }
 
@@ -512,7 +577,7 @@ function ownerCard(r,opts={}){
         <div class="card-sub">${sub}</div>
       </div>
       <div class="card-right">
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getBadge(r.id)}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">${getBadge(r.id,r)}</div>
         <button class="toggle-detail" onclick="togPanel('${r.id}')">${open?'▲ moins':'▼ détail'}</button>
       </div>
     </div>
@@ -520,6 +585,24 @@ function ownerCard(r,opts={}){
     ${declined&&!open?`<div style="font-size:.8125rem;color:var(--red);margin-top:.5rem;padding:7px 10px;background:var(--red-bg);border-radius:6px">⚠ Carine n'est pas disponible — réassignez cette mission.</div>`:''}
     ${actions?`<div class="card-actions">${actions}</div>`:''}
     <div class="tpanel${open?' open':''}">${taskPanel(r)}</div>
+  </div>`;
+}
+
+// ── deleted card ──
+function deletedCard(r){
+  const sub=r.source==='airbnb'?`${r.nights} nuit${r.nights>1?'s':''} · Airbnb`:(r.platform||'Mission ponctuelle');
+  return`<div class="card is-deleted">
+    <div class="card-top">
+      <span class="card-dot d-ko"></span>
+      <div class="card-info">
+        <div class="card-title" style="text-decoration:line-through;opacity:.5">${getMissionTitle(r)}</div>
+        <div class="card-sub">${sub}</div>
+      </div>
+      <div class="card-right">
+        <span class="badge b-ko">Supprimée</span>
+      </div>
+    </div>
+    <div class="card-actions"><button class="btn" onclick="restoreMission('${r.id}')">Restaurer</button></div>
   </div>`;
 }
 
@@ -640,6 +723,7 @@ function renderOwner(){
     ${mine.length?mine.map(r=>ownerCard(r,{canSendCarine:true})).join(''):'<div class="empty">Aucune mission assignée</div>'}
     <div class="sec-div">Chez Carine <span class="sec-count">${car.length}</span></div>
     ${car.length?car.map(r=>ownerCard(r,{canUnassign:true})).join(''):'<div class="empty">Aucune mission confiée à Carine</div>'}
+    ${deletedRes().length?`<div class="sec-div">Supprimées <span class="sec-count">${deletedRes().length}</span></div>${deletedRes().map(r=>deletedCard(r)).join('')}`:''}
     <button class="fab" onclick="openModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Mission ad-hoc</button>
   `;
 }
