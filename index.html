@@ -567,10 +567,10 @@ function ownerCard(r,opts={}){
   const sub=r.source==='airbnb'?`${r.nights} nuit${r.nights>1?'s':''} · Airbnb`:(r.platform||'Mission ponctuelle');
   let actions='';
   if(!a)actions=`<button class="btn btn-green" onclick="doMe('${r.id}')">Je m'en charge</button><button class="btn btn-blue" onclick="doCarine('${r.id}')">Envoyer à Carine</button>`;
-  if(opts.canSendCarine)actions=`<button class="btn btn-blue" onclick="doCarine('${r.id}')">Passer à Carine</button>`;
+  if(opts.canSendCarine)actions=`<button class="btn btn-blue" onclick="doCarine('${r.id}')">Passer à Carine</button><button class="btn" onclick="doUnassign('${r.id}')">Remettre à attribuer</button>`;
   if(opts.canUnassign){
     const isPending=a?.status==='pending';
-    actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button>${isPending?`<button class="btn btn-red" onclick="deleteMission('${r.id}')">Supprimer</button>`:''}`;
+    actions=`<button class="btn btn-amber" onclick="doUnassign('${r.id}')">Réassigner à moi</button><button class="btn" onclick="doUnassign('${r.id}')">Remettre à attribuer</button>${isPending?`<button class="btn btn-red" onclick="deleteMission('${r.id}')">Supprimer</button>`:''}`;
   }
   return`<div class="card${declined?' has-alert':''}">
     <div class="card-top">
