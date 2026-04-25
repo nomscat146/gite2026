@@ -265,7 +265,9 @@ function serialize(){
     })),
     overrides:Object.fromEntries(Object.entries(dateOverrides).map(([id,v])=>[id,{
       checkout:v.checkout?v.checkout.toISOString():null,
-      nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?v.nextCheckin.toISOString():null):undefined
+      nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?v.nextCheckin.toISOString():null):undefined,
+      checkoutTime:v.checkoutTime||null,
+      nextCheckinTime:v.nextCheckinTime||null
     }]))
   };
 }
@@ -287,7 +289,9 @@ function deserialize(s){
     for(const[id,v]of Object.entries(s.overrides)){
       dateOverrides[id]={
         checkout:v.checkout?new Date(v.checkout):null,
-        nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?new Date(v.nextCheckin):null):undefined
+        nextCheckin:v.nextCheckin!==undefined?(v.nextCheckin?new Date(v.nextCheckin):null):undefined,
+        checkoutTime:v.checkoutTime||null,
+        nextCheckinTime:v.nextCheckinTime||null
       };
     }
   }
@@ -364,6 +368,9 @@ function getEffective(r){
   return{checkout,nextCheckin};
 }
 
+function getCoTime(id){return(dateOverrides[id]?.checkoutTime)||'11:00';}
+function getCiTime(id){return(dateOverrides[id]?.nextCheckinTime)||'16:00';}
+
 function getMissionTitle(r){
   const{checkout,nextCheckin}=getEffective(r);
   if(nextCheckin)return`Ménage entre le ${fmtMed(checkout)} → ${fmtMed(nextCheckin)}`;
@@ -371,8 +378,8 @@ function getMissionTitle(r){
 }
 function getWindowStr(r){
   const{checkout,nextCheckin}=getEffective(r);
-  const from=fmtMed(checkout)+' à 11h';
-  if(nextCheckin)return`${from} → ${fmtMed(nextCheckin)} à 16h`;
+  const from=`${fmtMed(checkout)} à ${getCoTime(r.id)}`;
+  if(nextCheckin)return`${from} → ${fmtMed(nextCheckin)} à ${getCiTime(r.id)}`;
   return`À partir du ${from}`;
 }
 
@@ -394,7 +401,8 @@ function buildSMS(r){
   const lines=getLines(r.id).map(l=>'  • '+l).join('\n');
   const note=onotes[r.id]?'\n\nNote : '+onotes[r.id]:'';
   const ctx=r.nights?`suite à un séjour de ${r.nights} nuit${r.nights>1?'s':''}`:'prévu';
-  return`Bonjour Carine,\n\nSeriez-vous disponible le ${fmtShort(checkout)} pour un ménage ${ctx} ?\n\nPrestations :\n${lines}${note}\n\nMerci de confirmer votre disponibilité.`;
+  const window=getWindowStr(r);
+  return`Bonjour Carine,\n\nSeriez-vous disponible le ${fmtShort(checkout)} pour un ménage ${ctx} ?\nFenêtre d'intervention : ${window}\n\nPrestations :\n${lines}${note}\n\nMerci de confirmer votre disponibilité.`;
 }
 
 // ── conflicts ──
@@ -425,7 +433,9 @@ async function carineReply(id,ok){
     snapshots[id]={
       tasks:{...(tasks[id]||{...DEFS})},
       checkout:checkout?checkout.toISOString():null,
-      nextCheckin:nextCheckin?nextCheckin.toISOString():null
+      nextCheckin:nextCheckin?nextCheckin.toISOString():null,
+      checkoutTime:getCoTime(id),
+      nextCheckinTime:getCiTime(id)
     };
   }
   await save();render();
@@ -447,9 +457,12 @@ async function restoreMission(id){
 }
 async function saveDates(id){
   const coEl=document.getElementById('de_co_'+id),ciEl=document.getElementById('de_ci_'+id);
+  const coTEl=document.getElementById('de_co_t_'+id),ciTEl=document.getElementById('de_ci_t_'+id);
   if(!dateOverrides[id])dateOverrides[id]={};
   if(coEl&&coEl.value)dateOverrides[id].checkout=new Date(coEl.value);
   if(ciEl)dateOverrides[id].nextCheckin=ciEl.value?new Date(ciEl.value):null;
+  if(coTEl&&coTEl.value)dateOverrides[id].checkoutTime=coTEl.value;
+  if(ciTEl&&ciTEl.value)dateOverrides[id].nextCheckinTime=ciTEl.value;
   await save();render();
 }
 async function resetDates(id){delete dateOverrides[id];await save();render();}
@@ -474,6 +487,8 @@ function isModified(id,r){
   if(snap.checkout&&checkout.toISOString().slice(0,10)!==snap.checkout.slice(0,10))return true;
   const nc=nextCheckin?nextCheckin.toISOString().slice(0,10):null;
   if(nc!==(snap.nextCheckin?snap.nextCheckin.slice(0,10):null))return true;
+  if(getCoTime(id)!==(snap.checkoutTime||'11:00'))return true;
+  if(getCiTime(id)!==(snap.nextCheckinTime||'16:00'))return true;
   return false;
 }
 function buildDiff(id,r){
@@ -487,9 +502,13 @@ function buildDiff(id,r){
   const{checkout,nextCheckin}=getEffective(r);
   if(snap.checkout&&checkout.toISOString().slice(0,10)!==snap.checkout.slice(0,10))
     lines.push(`<div class="diff-row"><span class="diff-label">Check-out</span><span class="diff-old">${fmtMed(new Date(snap.checkout))}</span><span class="diff-arrow">→</span><span class="diff-new">${fmtMed(checkout)}</span></div>`);
+  const sCoT=snap.checkoutTime||'11:00',curCoT=getCoTime(id);
+  if(curCoT!==sCoT)lines.push(`<div class="diff-row"><span class="diff-label">Heure check-out</span><span class="diff-old">${sCoT}</span><span class="diff-arrow">→</span><span class="diff-new">${curCoT}</span></div>`);
   const nc=nextCheckin?nextCheckin.toISOString().slice(0,10):null,snc=snap.nextCheckin?snap.nextCheckin.slice(0,10):null;
   if(nc!==snc)
     lines.push(`<div class="diff-row"><span class="diff-label">Check-in suivant</span><span class="diff-old">${snc?fmtMed(new Date(snap.nextCheckin)):'—'}</span><span class="diff-arrow">→</span><span class="diff-new">${nextCheckin?fmtMed(nextCheckin):'—'}</span></div>`);
+  const sCiT=snap.nextCheckinTime||'16:00',curCiT=getCiTime(id);
+  if(curCiT!==sCiT)lines.push(`<div class="diff-row"><span class="diff-label">Heure check-in</span><span class="diff-old">${sCiT}</span><span class="diff-arrow">→</span><span class="diff-new">${curCiT}</span></div>`);
   if(!lines.length)return'';
   return`<div class="diff-box"><div class="diff-title">Modifications depuis la confirmation de Carine</div>${lines.join('')}</div>`;
 }
@@ -525,12 +544,12 @@ function dateEditSection(r){
     <div class="date-edit-row">
       <span class="date-edit-label">Check-out (départ)</span>
       <input type="date" class="date-edit-input" id="de_co_${r.id}" value="${fmtInput(checkout)}">
-      <span style="font-size:.75rem;color:var(--text3)">à 11h</span>
+      <input type="time" class="date-edit-input" id="de_co_t_${r.id}" value="${getCoTime(r.id)}" style="width:90px">
     </div>
     <div class="date-edit-row">
       <span class="date-edit-label">Check-in suivant</span>
       <input type="date" class="date-edit-input" id="de_ci_${r.id}" value="${nextCheckin?fmtInput(nextCheckin):''}">
-      <span style="font-size:.75rem;color:var(--text3)">à 16h</span>
+      <input type="time" class="date-edit-input" id="de_ci_t_${r.id}" value="${getCiTime(r.id)}" style="width:90px">
     </div>
     <div class="date-hint">Laisser le check-in suivant vide = fenêtre sans contrainte de fin</div>
     <div class="date-actions">
