@@ -739,11 +739,11 @@ function renderPwdScreen(){
   setTimeout(()=>document.getElementById('pwd-input')?.focus(),50);
 }
 function checkPwd(){
-  if(document.getElementById('pwd-input').value===OWNER_PWD){user='owner';render();}
+  if(document.getElementById('pwd-input').value===OWNER_PWD){user='owner';sessionStorage.setItem('mu',user);render();}
   else{document.getElementById('pwd-err').classList.add('show');document.getElementById('pwd-input').value='';}
 }
-function setUser(u){if(u==='owner'){renderPwdScreen();return;}user=u;render();}
-function logout(){user=null;render();}
+function setUser(u){if(u==='owner'){renderPwdScreen();return;}user=u;sessionStorage.setItem('mu',user);render();}
+function logout(){user=null;sessionStorage.removeItem('mu');render();}
 
 function renderOwner(){
   const all=allRes(),none=all.filter(r=>!assign[r.id]),mine=all.filter(r=>assign[r.id]?.who==='me'),car=all.filter(r=>assign[r.id]?.who==='carine');
@@ -822,7 +822,8 @@ async function loadIcal(){
 }
 
 (async()=>{
-  render(); // affiche l'écran de login immédiatement
+  user=sessionStorage.getItem('mu')||null;
+  render();
   await load();
   render();
   await loadIcal();
