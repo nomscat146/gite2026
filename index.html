@@ -303,15 +303,14 @@ function deserialize(s){
 // ── save/load avec indicateur visuel ──
 let saveTimer=null;
 async function save(){
-  // debounce 800ms pour éviter les écritures en rafale
   clearTimeout(saveTimer);
   syncState='saving'; updateSyncDot();
+  // Écriture localStorage immédiate — pas de debounce, survit à un rechargement rapide
+  try{localStorage.setItem('menage_fallback',JSON.stringify(serialize()));}catch(_){}
+  // Supabase en debounce 800ms pour éviter les rafales
   saveTimer=setTimeout(async()=>{
-    const data=serialize();
-    // Toujours écrire dans localStorage — miroir fiable si Supabase en pause
-    try{localStorage.setItem('menage_fallback',JSON.stringify(data));}catch(_){}
     try{
-      await sbSet(data);
+      await sbSet(serialize());
       syncState='ok';
     }catch(e){
       syncState='error';
