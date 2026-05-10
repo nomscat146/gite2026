@@ -247,20 +247,21 @@ async function sbGet(){
 }
 
 async function sbSet(data){
-  const r=await fetch(`${SUPABASE_URL}/rest/v1/menage_state?id=eq.singleton`,{
-    method:'PATCH',
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/menage_state`,{
+    method:'POST',
     headers:{
       'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,
-      'Content-Type':'application/json','Prefer':'return=minimal'
+      'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'
     },
-    body:JSON.stringify({data,updated_at:new Date().toISOString()})
+    body:JSON.stringify({id:'singleton',data,updated_at:new Date().toISOString()})
   });
-  if(!r.ok)throw new Error('PATCH failed');
+  if(!r.ok)throw new Error('UPSERT failed');
 }
 
 // ── sérialisation ──
 function serialize(){
   return{
+    _savedAt:new Date().toISOString(),
     assign,tasks,onotes,ccomments,icalUrl,snapshots,hidden:[...hidden],deleted:[...deleted],
     adhoc:adhocRes.map(r=>({...r,
       start:r.start.toISOString(),end:r.end.toISOString(),checkout:r.checkout.toISOString()
@@ -306,8 +307,11 @@ async function save(){
   clearTimeout(saveTimer);
   syncState='saving'; updateSyncDot();
   saveTimer=setTimeout(async()=>{
+    const data=serialize();
+    // Toujours écrire dans localStorage — miroir fiable si Supabase en pause
+    try{localStorage.setItem('menage_fallback',JSON.stringify(data));}catch(_){}
     try{
-      await sbSet(serialize());
+      await sbSet(data);
       syncState='ok';
     }catch(e){
       syncState='error';
@@ -318,17 +322,20 @@ async function save(){
 }
 
 async function load(){
-  try{
-    const data=await sbGet();
-    deserialize(data);
-  }catch(e){
-    console.error('Supabase load error',e);
-    // Fallback localStorage si Supabase indispo (ex : projet en pause)
-    try{
-      const local=localStorage.getItem('menage_fallback');
-      if(local)deserialize(JSON.parse(local));
-    }catch(_){}
+  let sbData=null, sbOk=false;
+  try{sbData=await sbGet(); sbOk=true;}catch(e){console.error('Supabase load error',e);}
+
+  if(sbOk){
+    // Supabase disponible : source de vérité unique, jamais écrasée par localStorage
+    if(sbData){
+      deserialize(sbData);
+      try{localStorage.setItem('menage_fallback',JSON.stringify(sbData));}catch(_){}
+    }
+    return;
   }
+
+  // Supabase indisponible (projet en pause) : localStorage en secours local seulement
+  try{const raw=localStorage.getItem('menage_fallback');if(raw)deserialize(JSON.parse(raw));}catch(_){}
 }
 
 function updateSyncDot(){
