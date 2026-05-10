@@ -321,21 +321,39 @@ async function save(){
   },800);
 }
 
+function hasContent(d){
+  if(!d)return false;
+  return !!(d.icalUrl||(d.adhoc&&d.adhoc.length>0)||(d.assign&&Object.keys(d.assign).length>0));
+}
+
 async function load(){
   let sbData=null, sbOk=false;
   try{sbData=await sbGet(); sbOk=true;}catch(e){console.error('Supabase load error',e);}
 
+  let localData=null;
+  try{const raw=localStorage.getItem('menage_fallback');if(raw)localData=JSON.parse(raw);}catch(_){}
+
   if(sbOk){
-    // Supabase disponible : source de vérité unique, jamais écrasée par localStorage
-    if(sbData){
+    const sbHas=hasContent(sbData), locHas=hasContent(localData);
+    const sbTs=sbData?._savedAt?new Date(sbData._savedAt):new Date(0);
+    const locTs=localData?._savedAt?new Date(localData._savedAt):new Date(0);
+    // localStorage gagne seulement s'il a des données réelles ET est plus récent
+    if(locHas&&locTs>sbTs){
+      deserialize(localData);
+      if(sbOk)try{await sbSet(localData);}catch(_){}
+    }else if(sbHas){
       deserialize(sbData);
       try{localStorage.setItem('menage_fallback',JSON.stringify(sbData));}catch(_){}
+    }else if(locHas){
+      // Supabase vide mais localStorage a des données → récupération
+      deserialize(localData);
+      try{await sbSet(localData);}catch(_){}
     }
     return;
   }
 
-  // Supabase indisponible (projet en pause) : localStorage en secours local seulement
-  try{const raw=localStorage.getItem('menage_fallback');if(raw)deserialize(JSON.parse(raw));}catch(_){}
+  // Supabase indisponible : localStorage en secours
+  if(localData)deserialize(localData);
 }
 
 function updateSyncDot(){
