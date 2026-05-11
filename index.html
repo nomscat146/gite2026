@@ -757,7 +757,7 @@ function renderOwner(){
     <div style="margin-top:.625rem"><button class="btn btn-blue" onclick="saveIcalUrl()">Enregistrer</button></div>
   </div>`;
   return`
-    <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${icMode==='demo'?'non configuré':new URL(icalUrl).pathname.split('/').pop()}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
+    <div class="ical-bar"><span class="ical-dot ${icMode==='live'?'ical-dot-ok':'ical-dot-wait'}"></span><span class="ical-lbl">iCal · ${(!icalUrl||icMode==='demo')?'non configuré':(()=>{try{return new URL(icalUrl).pathname.split('/').pop();}catch{return 'non configuré';}})()}</span>${icL}<span id="sync-dot" class="sync-dot" title="Synchronisé"></span></div>
     ${icalSetup}
     ${alert}
     <div class="stat-grid">
