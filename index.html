@@ -320,6 +320,24 @@ async function save(){
   },800);
 }
 
+async function forceSync(){
+  const btn=document.getElementById('force-sync-btn');
+  if(btn){btn.textContent='⏳ Synchro…';btn.disabled=true;}
+  const data=serialize();
+  try{localStorage.setItem('menage_fallback',JSON.stringify(data));}catch(_){}
+  try{
+    await sbSet(data);
+    syncState='ok';
+    if(btn){btn.textContent='✓ Synchronisé';btn.style.background='var(--green-bg)';btn.style.borderColor='var(--green-border)';btn.style.color='var(--green)';}
+    setTimeout(()=>{if(btn){btn.textContent='⬆ Sync';btn.style.background='';btn.style.borderColor='';btn.style.color='';btn.disabled=false;}},2000);
+  }catch(e){
+    syncState='error';
+    if(btn){btn.textContent='✗ Erreur';btn.style.background='var(--red-bg)';btn.style.borderColor='var(--red-border)';btn.style.color='var(--red)';}
+    setTimeout(()=>{if(btn){btn.textContent='⬆ Sync';btn.style.background='';btn.style.borderColor='';btn.style.color='';btn.disabled=false;}},2500);
+  }
+  updateSyncDot();
+}
+
 function hasContent(d){
   if(!d)return false;
   return !!(d.icalUrl||(d.adhoc&&d.adhoc.length>0)||(d.assign&&Object.keys(d.assign).length>0));
@@ -788,7 +806,7 @@ function renderCarine(){
 function render(){
   const app=document.getElementById('app');
   if(!user){app.innerHTML=renderLogin();return;}
-  const tb=`<div class="topbar"><div class="topbar-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div class="topbar-title">${user==='owner'?'Propriétaire':'Bonjour Carine'}</div><button class="switch-btn" onclick="logout()">Changer de profil</button></div>`;
+  const tb=`<div class="topbar"><div class="topbar-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div class="topbar-title">${user==='owner'?'Propriétaire':'Bonjour Carine'}</div><button id="force-sync-btn" class="switch-btn" style="font-weight:600;border-color:var(--border2)" onclick="forceSync()">⬆ Sync</button><button class="switch-btn" onclick="logout()">Changer de profil</button></div>`;
   app.innerHTML=tb+(user==='owner'?renderOwner():renderCarine());
 }
 
